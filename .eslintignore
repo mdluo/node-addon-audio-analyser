@@ -1,0 +1,5 @@
+node_modules/**
+coverage/**
+libs/**
+*.spec.js
+*.min.js
