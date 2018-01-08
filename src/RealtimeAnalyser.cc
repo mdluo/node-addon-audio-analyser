@@ -40,16 +40,9 @@ RealtimeAnalyser::~RealtimeAnalyser() {
 }
 
 NAN_METHOD(RealtimeAnalyser::New) {
-  if (info.IsConstructCall()) {
-    RealtimeAnalyser *obj = new RealtimeAnalyser();
-    obj->Wrap(info.This());
-    info.GetReturnValue().Set(info.This());
-  } else {
-    const int argc = 0;
-    v8::Local<v8::Value> argv[argc] = {};
-    v8::Local<v8::Function> cons = Nan::New(constructor);
-    info.GetReturnValue().Set(cons->NewInstance(argc, argv));
-  }
+  RealtimeAnalyser *obj = new RealtimeAnalyser();
+  obj->Wrap(info.This());
+  info.GetReturnValue().Set(info.This());
 }
 
 }  // namespace naaa
