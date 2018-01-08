@@ -16,6 +16,7 @@
 #define SRC_REALTIMEANALYSER_H_
 
 #include <nan.h>
+#include <node_buffer.h>
 
 namespace naaa {
 
@@ -26,6 +27,9 @@ class RealtimeAnalyser : public Nan::ObjectWrap {
     RealtimeAnalyser();
     ~RealtimeAnalyser();
     static NAN_METHOD(New);
+
+    static NAN_METHOD(WriteInput);
+
     static Nan::Persistent<v8::Function> constructor;
 };
 

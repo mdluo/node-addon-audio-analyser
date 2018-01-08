@@ -26,7 +26,7 @@ NAN_MODULE_INIT(RealtimeAnalyser::Init) {
   tpl->SetClassName(Nan::New("RealtimeAnalyser").ToLocalChecked());
   tpl->InstanceTemplate()->SetInternalFieldCount(1);
 
-  // Nan::SetPrototypeMethod(tpl, "plusOne", PlusOne);
+  Nan::SetPrototypeMethod(tpl, "WriteInput", WriteInput);
 
   constructor.Reset(Nan::GetFunction(tpl).ToLocalChecked());
   Nan::Set(target, Nan::New("RealtimeAnalyser").ToLocalChecked(),
@@ -43,6 +43,13 @@ NAN_METHOD(RealtimeAnalyser::New) {
   RealtimeAnalyser *obj = new RealtimeAnalyser();
   obj->Wrap(info.This());
   info.GetReturnValue().Set(info.This());
+}
+
+NAN_METHOD(RealtimeAnalyser::WriteInput) {
+  char* input_buffer_ = reinterpret_cast<char*>(node::Buffer::Data(info[0]));
+  uint32_t frames_to_process = Nan::To<uint32_t>(info[1]).FromJust();
+  Nan::MaybeLocal<v8::Object> buffer = Nan::NewBuffer(data, size);
+
 }
 
 }  // namespace naaa
