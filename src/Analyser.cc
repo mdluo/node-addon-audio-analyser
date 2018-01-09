@@ -16,6 +16,7 @@
 #define SRC_ANALYSER_CC_
 
 #include "Analyser.h"
+#include "Utilities.h"
 
 namespace naaa {
 
@@ -132,16 +133,39 @@ NAN_SETTER(Analyser::SetInputBuffer) {
     reinterpret_cast<char*>(node::Buffer::Data(value->ToObject()));
 }
 
+namespace {
+
+void ApplyWindow(float* p, size_t n) {
+  // Blackman window
+  double alpha = 0.16;
+  double a0 = 0.5 * (1 - alpha);
+  double a1 = 0.5;
+  double a2 = 0.5 * alpha;
+  for (unsigned i = 0; i < n; ++i) {
+    double x = static_cast<double>(i) / static_cast<double>(n);
+    double window =
+        a0 - a1 * cos(twoPiDouble * x) + a2 * cos(twoPiDouble * 2.0 * x);
+    p[i] *= static_cast<float>(window);
+  }
+}
+
+}  // namespace
+
 void Analyser::DoFFTAnalysis() {
-  
+  Analyser *obj = Nan::ObjectWrap::Unwrap<Analyser>(info.This());
+  size_t fft_size = obj->FftSize();
+  char* input_buffer = obj->InputBuffer();
+}
+
+void Analyser::ConvertFloatToDb(char* destination) {
+
 }
 
 NAN_METHOD(Analyser::GetFloatFrequencyData) {
-  Analyser *obj =
-    Nan::ObjectWrap::Unwrap<Analyser>(info.This());
   char* destination_array =
     reinterpret_cast<char*>(node::Buffer::Data(info[0]->ToObject()));
-  destination_array[0] = (char)(obj->fft_size_) / 16;
+  DoFFTAnalysis();
+  ConvertFloatToDb(destination_array);
 }
 
 }  // namespace naaa

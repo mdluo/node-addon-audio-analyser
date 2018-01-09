@@ -46,6 +46,7 @@ class Analyser : public Nan::ObjectWrap {
     static NAN_SETTER(SetInputBuffer);
 
     void DoFFTAnalysis();
+    void ConvertFloatToDb(char* destination);
 
     static NAN_METHOD(GetFloatFrequencyData);
 
