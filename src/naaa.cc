@@ -13,12 +13,12 @@
  */
 
 #include <nan.h>
-#include "RealtimeAnalyser.h"
+#include "Analyser.h"
 
 namespace naaa {
 
 void InitAll(v8::Local<v8::Object> exports) {
-  RealtimeAnalyser::Init(exports);
+  Analyser::Init(exports);
 }
 
 }

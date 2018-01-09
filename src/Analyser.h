@@ -12,27 +12,52 @@
  * copies or substantial portions of the Software.
  */
 
-#ifndef SRC_REALTIMEANALYSER_H_
-#define SRC_REALTIMEANALYSER_H_
+#ifndef SRC_ANALYSER_H_
+#define SRC_ANALYSER_H_
 
 #include <nan.h>
 #include <node_buffer.h>
 
 namespace naaa {
 
-class RealtimeAnalyser : public Nan::ObjectWrap {
+class Analyser : public Nan::ObjectWrap {
  public:
     static NAN_MODULE_INIT(Init);
+
  private:
-    RealtimeAnalyser();
-    ~RealtimeAnalyser();
+    Analyser();
+    ~Analyser();
+
     static NAN_METHOD(New);
 
-    static NAN_METHOD(WriteInput);
+    static NAN_GETTER(FftSize);
+    static NAN_SETTER(SetFftSize);
+
+    static NAN_GETTER(MaxDecibels);
+    static NAN_SETTER(SetMaxDecibels);
+
+    static NAN_GETTER(MinDecibels);
+    static NAN_SETTER(SetMinDecibels);
+
+    static NAN_GETTER(SmoothingTimeConstant);
+    static NAN_SETTER(SetSmoothingTimeConstant);
+
+    static NAN_GETTER(InputBuffer);
+    static NAN_SETTER(SetInputBuffer);
+
+    void DoFFTAnalysis();
+
+    static NAN_METHOD(GetFloatFrequencyData);
 
     static Nan::Persistent<v8::Function> constructor;
+
+    size_t fft_size_;
+    double min_decibels_;
+    double max_decibels_;
+    double smoothing_time_constant_;
+    char* input_buffer_;
 };
 
 }  // namespace naaa
 
-#endif  // SRC_REALTIMEANALYSER_H_
+#endif  // SRC_ANALYSER_H_

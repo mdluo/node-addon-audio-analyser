@@ -20,3 +20,11 @@ for (let i = 1; i <= 7; i += 1) {
     stream.push(Buffer.from(data))
   })
 }
+
+/*
+const arr = new Float32Array(2048)
+while (true) {
+  debugger
+  analyser.getFloatFrequencyData(arr)
+}
+*/
