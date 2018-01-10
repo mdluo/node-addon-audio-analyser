@@ -26,6 +26,8 @@ class Analyser : public Nan::ObjectWrap {
   static NAN_MODULE_INIT(Init);
 
  private:
+  static Nan::Persistent<v8::Function> constructor;
+
   Analyser(size_t fft_size, double max_decibels, double min_decibels,
     double smoothing_time_constant, float* input_buffer,
     float* magnitude_buffer);
@@ -36,10 +38,9 @@ class Analyser : public Nan::ObjectWrap {
 
   void DoFFTAnalysis();
   void ConvertFloatToDb(float* destination);
-
   static NAN_METHOD(GetFloatFrequencyData);
-
-  static Nan::Persistent<v8::Function> constructor;
+  void ConvertToByteData(unsigned char* destination);
+  static NAN_METHOD(GetByteFrequencyData);
 
   size_t fft_size_;
   std::unique_ptr<FFTFrame> analysis_frame_;

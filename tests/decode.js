@@ -21,8 +21,8 @@ for (let i = 2; i <= 7; i += 1) {
   })
 }
 
-const arr = new Float32Array(2048)
+const arr = new Uint8Array(2048)
 
 setInterval(() => {
-  analyser.getFloatFrequencyData(arr)
+  analyser.getByteFrequencyData(arr)
 }, 20)

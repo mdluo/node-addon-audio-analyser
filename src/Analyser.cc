@@ -25,6 +25,7 @@ NAN_MODULE_INIT(Analyser::Init) {
   tpl->SetClassName(Nan::New("Analyser").ToLocalChecked());
 
   Nan::SetPrototypeMethod(tpl, "GetFloatFrequencyData", GetFloatFrequencyData);
+  Nan::SetPrototypeMethod(tpl, "GetByteFrequencyData", GetByteFrequencyData);
 
   constructor.Reset(Nan::GetFunction(tpl).ToLocalChecked());
   Nan::Set(target, Nan::New("Analyser").ToLocalChecked(),
@@ -121,6 +122,38 @@ NAN_METHOD(Analyser::GetFloatFrequencyData) {
     reinterpret_cast<float*>(node::Buffer::Data(info[0]));
   obj->DoFFTAnalysis();
   obj->ConvertFloatToDb(destination_array);
+}
+
+void Analyser::ConvertToByteData(unsigned char* destination_array) {
+  size_t len = fft_size_ / 2;
+  if (len > 0) {
+    const double range_scale_factor = max_decibels_ == min_decibels_
+                                          ? 1
+                                          : 1 / (max_decibels_ - min_decibels_);
+    const double min_decibels = min_decibels_;
+    const float* source = magnitude_buffer_;
+    unsigned char* destination = destination_array;
+    for (unsigned i = 0; i < len; ++i) {
+      float linear_value = source[i];
+      double db_mag = LinearToDecibels(linear_value);
+      double scaled_value =
+          UCHAR_MAX * (db_mag - min_decibels) * range_scale_factor;
+      if (scaled_value < 0)
+        scaled_value = 0;
+      if (scaled_value > UCHAR_MAX)
+        scaled_value = UCHAR_MAX;
+      destination[i] = static_cast<unsigned char>(scaled_value);
+    }
+  }
+}
+
+NAN_METHOD(Analyser::GetByteFrequencyData) {
+  Analyser *obj =
+      Nan::ObjectWrap::Unwrap<Analyser>(info.This());
+  unsigned char* destination_array =
+    reinterpret_cast<unsigned char*>(node::Buffer::Data(info[0]));
+  obj->DoFFTAnalysis();
+  obj->ConvertToByteData(destination_array);
 }
 
 }  // namespace naaa
