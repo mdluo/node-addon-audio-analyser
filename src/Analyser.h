@@ -17,46 +17,37 @@
 
 #include <nan.h>
 #include <node_buffer.h>
+#include "FFTFrame.h"
 
 namespace naaa {
 
 class Analyser : public Nan::ObjectWrap {
  public:
-    static NAN_MODULE_INIT(Init);
+  static NAN_MODULE_INIT(Init);
 
  private:
-    Analyser();
-    ~Analyser();
+  Analyser(size_t fft_size, double max_decibels, double min_decibels,
+    double smoothing_time_constant, float* input_buffer,
+    float* magnitude_buffer);
 
-    static NAN_METHOD(New);
+  ~Analyser();
 
-    static NAN_GETTER(FftSize);
-    static NAN_SETTER(SetFftSize);
+  static NAN_METHOD(New);
 
-    static NAN_GETTER(MaxDecibels);
-    static NAN_SETTER(SetMaxDecibels);
+  void DoFFTAnalysis();
+  void ConvertFloatToDb(float* destination);
 
-    static NAN_GETTER(MinDecibels);
-    static NAN_SETTER(SetMinDecibels);
+  static NAN_METHOD(GetFloatFrequencyData);
 
-    static NAN_GETTER(SmoothingTimeConstant);
-    static NAN_SETTER(SetSmoothingTimeConstant);
+  static Nan::Persistent<v8::Function> constructor;
 
-    static NAN_GETTER(InputBuffer);
-    static NAN_SETTER(SetInputBuffer);
-
-    void DoFFTAnalysis();
-    void ConvertFloatToDb(char* destination);
-
-    static NAN_METHOD(GetFloatFrequencyData);
-
-    static Nan::Persistent<v8::Function> constructor;
-
-    size_t fft_size_;
-    double min_decibels_;
-    double max_decibels_;
-    double smoothing_time_constant_;
-    char* input_buffer_;
+  size_t fft_size_;
+  std::unique_ptr<FFTFrame> analysis_frame_;
+  double max_decibels_;
+  double min_decibels_;
+  double smoothing_time_constant_;
+  float* input_buffer_;
+  float* magnitude_buffer_;
 };
 
 }  // namespace naaa

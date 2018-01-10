@@ -17,7 +17,9 @@
     "lame": "https://github.com/mdluo/node-lame"
   },
   "scripts": {
-    "build": "node-gyp rebuild",
+    "build": "node-gyp build",
+    "rebuild": "node-gyp rebuild",
+    "xcode": "node-gyp configure -- -f xcode && open build/binding.xcodeproj",
     "test": "node tests/index.js",
     "debug": "node --inspect=0.0.0.0:9229 --inspect-brk=0.0.0.0:9229 tests/decode.js"
   }

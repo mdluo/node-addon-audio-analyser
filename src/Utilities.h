@@ -23,4 +23,17 @@ const float piFloat = static_cast<float>(M_PI);
 const double twoPiDouble = piDouble * 2.0;
 const float twoPiFloat = piFloat * 2.0f;
 
+template<typename T, typename... Args>
+std::unique_ptr<T> make_unique(Args&&... args) {
+  return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
+
+float DecibelsToLinear(float decibels) {
+  return powf(10, 0.05f * decibels);
+}
+
+float LinearToDecibels(float linear) {
+  return 20 * log10f(linear);
+}
+
 #endif  // SRC_UTILITIES_H_

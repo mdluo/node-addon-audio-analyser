@@ -15,16 +15,14 @@ const output = fs.createWriteStream('/dev/null')
 
 stream.pipe(decoder).pipe(analyser).pipe(output)
 
-for (let i = 1; i <= 7; i += 1) {
-  fs.readFile(`tests/fixtures/chunk_0${i}.mp3`, (err, data) => {
+for (let i = 2; i <= 7; i += 1) {
+  fs.readFile(`${__dirname}/fixtures/chunk_0${i}.mp3`, (err, data) => {
     stream.push(Buffer.from(data))
   })
 }
 
-/*
 const arr = new Float32Array(2048)
-while (true) {
-  debugger
+
+setInterval(() => {
   analyser.getFloatFrequencyData(arr)
-}
-*/
+}, 20)

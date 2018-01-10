@@ -12,9 +12,6 @@
  * copies or substantial portions of the Software.
  */
 
-#ifndef SRC_ANALYSER_CC_
-#define SRC_ANALYSER_CC_
-
 #include "Analyser.h"
 #include "Utilities.h"
 
@@ -27,22 +24,6 @@ NAN_MODULE_INIT(Analyser::Init) {
   tpl->InstanceTemplate()->SetInternalFieldCount(1);
   tpl->SetClassName(Nan::New("Analyser").ToLocalChecked());
 
-  Nan::SetAccessor(target,
-    Nan::New<v8::String>("fftSize").ToLocalChecked(),
-    FftSize, SetFftSize);
-  Nan::SetAccessor(target,
-    Nan::New<v8::String>("maxDecibels").ToLocalChecked(),
-    MaxDecibels, SetMaxDecibels);
-  Nan::SetAccessor(target,
-    Nan::New<v8::String>("minDecibels").ToLocalChecked(),
-    MinDecibels, SetMinDecibels);
-  Nan::SetAccessor(target,
-    Nan::New<v8::String>("smoothingTimeConstant").ToLocalChecked(),
-    SmoothingTimeConstant, SetSmoothingTimeConstant);
-  Nan::SetAccessor(target,
-    Nan::New<v8::String>("inputBuffer").ToLocalChecked(),
-    InputBuffer, SetInputBuffer);
-
   Nan::SetPrototypeMethod(tpl, "GetFloatFrequencyData", GetFloatFrequencyData);
 
   constructor.Reset(Nan::GetFunction(tpl).ToLocalChecked());
@@ -50,87 +31,30 @@ NAN_MODULE_INIT(Analyser::Init) {
     Nan::GetFunction(tpl).ToLocalChecked());
 }
 
-Analyser::Analyser() {
+Analyser::Analyser(size_t fft_size, double max_decibels, double min_decibels,
+  double smoothing_time_constant, float* input_buffer, float* magnitude_buffer)
+  : fft_size_(fft_size),
+    max_decibels_(max_decibels),
+    min_decibels_(min_decibels),
+    smoothing_time_constant_(smoothing_time_constant),
+    input_buffer_(input_buffer),
+    magnitude_buffer_(magnitude_buffer) {
+  analysis_frame_ = make_unique<FFTFrame>(fft_size);
 }
 
 Analyser::~Analyser() {
 }
 
 NAN_METHOD(Analyser::New) {
-  Analyser *obj = new Analyser();
+  Analyser *obj = new Analyser(
+    (size_t)Nan::To<uint32_t>(info[0]).FromJust(),
+    Nan::To<double>(info[1]).FromJust(),
+    Nan::To<double>(info[2]).FromJust(),
+    Nan::To<double>(info[3]).FromJust(),
+    reinterpret_cast<float*>(node::Buffer::Data(info[4]->ToObject())),
+    reinterpret_cast<float*>(node::Buffer::Data(info[5]->ToObject())));
   obj->Wrap(info.This());
   info.GetReturnValue().Set(info.This());
-}
-
-NAN_GETTER(Analyser::FftSize) {
-  Analyser *obj =
-    Nan::ObjectWrap::Unwrap<Analyser>(info.This());
-  info.GetReturnValue().Set(Nan::New<v8::Number>(obj->fft_size_));
-}
-
-NAN_SETTER(Analyser::SetFftSize) {
-  if (value->IsNumber()) {
-    Analyser *obj =
-      Nan::ObjectWrap::Unwrap<Analyser>(info.This());
-    obj->fft_size_ = value->Uint32Value();
-  }
-}
-
-NAN_GETTER(Analyser::MaxDecibels) {
-  Analyser *obj =
-    Nan::ObjectWrap::Unwrap<Analyser>(info.This());
-  info.GetReturnValue().Set(Nan::New<v8::Number>(obj->max_decibels_));
-}
-
-NAN_SETTER(Analyser::SetMaxDecibels) {
-  if (value->IsNumber()) {
-    Analyser *obj =
-      Nan::ObjectWrap::Unwrap<Analyser>(info.This());
-    obj->max_decibels_ = value->NumberValue();
-  }
-}
-
-NAN_GETTER(Analyser::MinDecibels) {
-  Analyser *obj =
-    Nan::ObjectWrap::Unwrap<Analyser>(info.This());
-  info.GetReturnValue().Set(Nan::New<v8::Number>(obj->min_decibels_));
-}
-
-NAN_SETTER(Analyser::SetMinDecibels) {
-  if (value->IsNumber()) {
-    Analyser *obj =
-      Nan::ObjectWrap::Unwrap<Analyser>(info.This());
-    obj->min_decibels_ = value->NumberValue();
-  }
-}
-
-NAN_GETTER(Analyser::SmoothingTimeConstant) {
-  Analyser *obj =
-    Nan::ObjectWrap::Unwrap<Analyser>(info.This());
-  info.GetReturnValue().Set(
-    Nan::New<v8::Number>(obj->smoothing_time_constant_));
-}
-
-NAN_SETTER(Analyser::SetSmoothingTimeConstant) {
-  if (value->IsNumber()) {
-    Analyser *obj =
-      Nan::ObjectWrap::Unwrap<Analyser>(info.This());
-    obj->smoothing_time_constant_ = value->NumberValue();
-  }
-}
-
-NAN_GETTER(Analyser::InputBuffer) {
-  Analyser *obj =
-    Nan::ObjectWrap::Unwrap<Analyser>(info.This());
-  info.GetReturnValue().Set(
-    Nan::NewBuffer(obj->input_buffer_, obj->fft_size_ * 4).ToLocalChecked());
-}
-
-NAN_SETTER(Analyser::SetInputBuffer) {
-  Analyser *obj =
-    Nan::ObjectWrap::Unwrap<Analyser>(info.This());
-  obj->input_buffer_ =
-    reinterpret_cast<char*>(node::Buffer::Data(value->ToObject()));
 }
 
 namespace {
@@ -152,22 +76,51 @@ void ApplyWindow(float* p, size_t n) {
 }  // namespace
 
 void Analyser::DoFFTAnalysis() {
-  Analyser *obj = Nan::ObjectWrap::Unwrap<Analyser>(info.This());
-  size_t fft_size = obj->FftSize();
-  char* input_buffer = obj->InputBuffer();
+  size_t fft_size = fft_size_;
+  float* temp_p = input_buffer_;
+
+  ApplyWindow(temp_p, fft_size);
+
+  analysis_frame_->DoFFT(temp_p);
+  float* real_p = analysis_frame_->RealData();
+  float* imag_p = analysis_frame_->ImagData();
+
+  imag_p[0] = 0;
+  const double magnitude_scale = 1.0 / fft_size;
+
+  double k = smoothing_time_constant_;
+  k = std::max(0.0, k);
+  k = std::min(1.0, k);
+
+  float* destination = magnitude_buffer_;
+  size_t n = fft_size / 2;
+  for (size_t i = 0; i < n; ++i) {
+    std::complex<double> c(real_p[i], imag_p[i]);
+    double scalar_magnitude = abs(c) * magnitude_scale;
+    destination[i] = static_cast<float>(
+      k * destination[i] + (1 - k) * scalar_magnitude);
+  }
 }
 
-void Analyser::ConvertFloatToDb(char* destination) {
-
+void Analyser::ConvertFloatToDb(float* destination) {
+  size_t len = fft_size_ / 2;
+  if (len > 0) {
+    const float* source = magnitude_buffer_;
+    for (unsigned i = 0; i < len; ++i) {
+      float linear_value = source[i];
+      double db_mag = LinearToDecibels(linear_value);
+      destination[i] = static_cast<float>(db_mag);
+    }
+  }
 }
 
 NAN_METHOD(Analyser::GetFloatFrequencyData) {
-  char* destination_array =
-    reinterpret_cast<char*>(node::Buffer::Data(info[0]->ToObject()));
-  DoFFTAnalysis();
-  ConvertFloatToDb(destination_array);
+  Analyser *obj =
+      Nan::ObjectWrap::Unwrap<Analyser>(info.This());
+  float* destination_array =
+    reinterpret_cast<float*>(node::Buffer::Data(info[0]));
+  obj->DoFFTAnalysis();
+  obj->ConvertFloatToDb(destination_array);
 }
 
 }  // namespace naaa
-
-#endif
