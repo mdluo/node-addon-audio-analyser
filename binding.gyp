@@ -13,8 +13,8 @@
             "/usr/local/include"
           ],
           "libraries" : [
-            "/usr/local/lib/libavcodec.dylib",
-            "/usr/local/lib/libavutil.dylib"
+            "-lavcodec",
+            "-lavutil"
           ]
         }],
         ['OS=="linux"', {
