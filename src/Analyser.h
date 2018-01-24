@@ -65,6 +65,7 @@ class Analyser : public Nan::ObjectWrap {
   static NAN_METHOD(New);
 
   void DoFFTAnalysis();
+  static NAN_METHOD(GetFloatMagnitudeData);
   void ConvertFloatToDb(float* destination);
   static NAN_METHOD(GetFloatFrequencyData);
   void ConvertToByteData(unsigned char* destination);

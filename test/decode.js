@@ -9,11 +9,11 @@ stream._read = () => {}
 
 const decoder = new Decoder({ float: true })
 
-const analyser = new Analyser()
+const analyser = new Analyser({
+  magnitude: true,
+})
 
-const output = fs.createWriteStream('/dev/null')
-
-stream.pipe(decoder).pipe(analyser).pipe(output)
+stream.pipe(decoder).pipe(analyser)
 
 for (let i = 2; i <= 7; i += 1) {
   fs.readFile(`${__dirname}/fixtures/chunk_0${i}.mp3`, (err, data) => {
@@ -21,8 +21,6 @@ for (let i = 2; i <= 7; i += 1) {
   })
 }
 
-const arr = new Uint8Array(2048)
-
-setInterval(() => {
-  analyser.getByteFrequencyData(arr)
-}, 20)
+analyser.on('data', (buffer) => {
+  console.log(new Float32Array(buffer.buffer))
+})

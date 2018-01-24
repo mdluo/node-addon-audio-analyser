@@ -52,6 +52,7 @@ NAN_MODULE_INIT(Analyser::Init) {
   tpl->InstanceTemplate()->SetInternalFieldCount(1);
   tpl->SetClassName(Nan::New("Analyser").ToLocalChecked());
 
+  Nan::SetPrototypeMethod(tpl, "GetFloatMagnitudeData", GetFloatMagnitudeData);
   Nan::SetPrototypeMethod(tpl, "GetFloatFrequencyData", GetFloatFrequencyData);
   Nan::SetPrototypeMethod(tpl, "GetByteFrequencyData", GetByteFrequencyData);
 
@@ -129,6 +130,12 @@ void Analyser::DoFFTAnalysis() {
     destination[i] = static_cast<float>(
       k * destination[i] + (1 - k) * scalar_magnitude);
   }
+}
+
+NAN_METHOD(Analyser::GetFloatMagnitudeData) {
+  Analyser *obj =
+      Nan::ObjectWrap::Unwrap<Analyser>(info.This());
+  obj->DoFFTAnalysis();
 }
 
 void Analyser::ConvertFloatToDb(float* destination) {
