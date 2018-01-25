@@ -22,5 +22,6 @@ for (let i = 2; i <= 7; i += 1) {
 }
 
 analyser.on('data', (buffer) => {
-  console.log(new Float32Array(buffer.buffer))
+  const array = new Float32Array(buffer.buffer)
+  console.log(array)
 })
