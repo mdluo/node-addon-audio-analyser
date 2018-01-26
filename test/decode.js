@@ -9,8 +9,14 @@ stream._read = () => {}
 
 const decoder = new Decoder({ float: true })
 
+const FFT_SIZE = 512
+
 const analyser = new Analyser({
+  fftSize: FFT_SIZE,
+  hopSize: FFT_SIZE / 2,
+  bufferSize: 4,
   magnitude: true,
+  smoothingTimeConstant: 0,
 })
 
 stream.pipe(decoder).pipe(analyser)
@@ -21,7 +27,10 @@ for (let i = 2; i <= 7; i += 1) {
   })
 }
 
+let count = 0
 analyser.on('data', (buffer) => {
-  const array = new Float32Array(buffer.buffer)
-  console.log(array)
+  if (count === 5) {
+    fs.writeFileSync('/Users/mdluo/Desktop/sgram.bin', buffer)
+  }
+  count += 1
 })
